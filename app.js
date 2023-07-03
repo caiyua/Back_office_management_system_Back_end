@@ -1,13 +1,18 @@
 const express = require('express')
 const app = express()
+const { handleNotFound, handle404Error } = require('./utils/notFoundMiddleware')
 
-//region 解析中间件配置
+/*
+ * 解析json、post、跨域
+ * */
 const cors = require('cors')
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cors())
 
-// JWT相关
+/*
+ * JWT
+ * */
 const expressJwt = require('express-jwt')
 const { jwtSecretKey } = require('./config/jwtSecretKey')
 const jwtWhiteList = ['/api/v1/register', '/api/v1/login']
@@ -19,9 +24,10 @@ app.use(
 		path: jwtWhiteList,
 	})
 )
-//endregion
 
-// 路由
+/*
+ * 路由
+ * */
 const userRouter = require('./router/user')
 const registerRouter = require('./router/register')
 const loginRouter = require('./router/login')
@@ -29,32 +35,32 @@ app.use('/api/v1', registerRouter)
 app.use('/api/v1', loginRouter)
 app.use('/api/v1/user', userRouter)
 
-//region 错误中间件
-
+/*
+ * 错误中间件
+ * */
 const joi = require('joi')
 app.use((err, req, res, next) => {
-	// joi表单的用户信息校验失败
-	if (err instanceof joi.ValidationError) {
-		return res.send({ code: 1, message: err.message })
-	}
-
-	// 路由不存在（这行代码有问题，如果没有token或者token错误不会往下走执行，而是卡着这行，有机会再解决，）
-	// res.status(404).json({ status: 404, message: '未找到该路由，请检查路径' })
-
-	// 没有token或者token错误
+	// 没有 token 或者 token 错误
 	if (err.name === 'UnauthorizedError') {
-		return res.status(401).json({ status: 401, message: 'token无效或过期' })
+		return res
+			.status(401)
+			.json({ status: 401, message: '未收到token或无效、过期' })
 	}
 
-	// 其他错误
-	res.send({ code: 1, message: err.message })
+	// joi 表单的用户信息校验失败
+	if (err instanceof joi.ValidationError) {
+		return res.status(401).json({ status: 401, message: err.message })
+	}
+
+	res.status(500).json({ status: 500, message: '服务器错误' }) // 其他错误
 })
+app.use(handleNotFound) // 处理路由不存在的中间件
+app.use(handle404Error) // 处理404错误的中间件
 
-//endregion
-
-//region 监听服务器
+/*
+ * 监听端口
+ * */
 const PORT = 3000
 app.listen(PORT, () => {
 	console.log(`http://localhost:${PORT}`)
 })
-//endregion

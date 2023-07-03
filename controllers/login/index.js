@@ -35,11 +35,18 @@ exports.login = (req, res) => {
 		// 返回token
 		const user = { ...results[0] }
 		delete user.password
-		const token = jwt.sign(user, jwtSecretKey, { expiresIn: '20min' })
+		const tokenExpiration = 1000 * 60 * 20
+		const token = jwt.sign(user, jwtSecretKey, {
+			expiresIn: tokenExpiration,
+		})
 		res.status(200).json({
 			status: 200,
 			message: '登录成功',
-			data: { token: 'Bearer ' + token, userinfo: user },
+			data: {
+				token: 'Bearer ' + token,
+				tokenExpiration,
+				userinfo: user,
+			},
 		})
 	})
 }
