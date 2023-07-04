@@ -11,6 +11,11 @@ app.use(express.urlencoded({ extended: false }))
 app.use(cors())
 
 /*
+ * 静态资源（必须放在JWT认证前）
+ **/
+app.use(express.static(__dirname + '/public'))
+
+/*
  * JWT
  * */
 const expressJwt = require('express-jwt')
