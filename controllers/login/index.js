@@ -35,7 +35,7 @@ exports.login = (req, res) => {
 		// 返回token
 		const user = { ...results[0] }
 		delete user.password
-		const tokenExpiration = 1000 * 60 * 20
+		const tokenExpiration = 60 * 60 * 24 // 采用数字作为token时效值
 		const token = jwt.sign(user, jwtSecretKey, {
 			expiresIn: tokenExpiration,
 		})
