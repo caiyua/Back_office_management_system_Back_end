@@ -12,6 +12,6 @@ exports.queryUserinfo = (req, res) => {
 	const userinfo = jwt.verify(token.split('Bearer ')[1], jwtSecretKey) // 解析的时候也要把Bearer后面的空格加上
 	res.status(200).json({
 		status: 200,
-		data: { username: userinfo.username, handImg: userinfo.head_img },
+		data: { userinfo },
 	})
 }
