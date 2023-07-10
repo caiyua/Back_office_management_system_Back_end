@@ -166,12 +166,12 @@ exports.addUser = (req, res) => {
 }
 
 /*
- * 获取用户列表
+ * 获取员工列表
  * */
 exports.getUserList = (req, res) => {
-	console.log('被访问了');
+	console.log('被访问了')
 	let { page, size } = req.query
-
+	console.log(page, size)
 	/*
 	 * 判空
 	 * */
@@ -180,11 +180,16 @@ exports.getUserList = (req, res) => {
 	/*
 	 * 转换类型
 	 * */
+	if (typeof page !== 'number' || typeof size !== 'number') {
+		page = parseInt(page)
+		size = parseInt(size)
+	}
 
 	/*
 	 * 获取
 	 * */
 	const getUserListTotal = () => {
+		// 获取总条数
 		return new Promise((resolve, reject) => {
 			const userListTotalSql = 'select count(*) as total from user'
 			db.query(userListTotalSql, (err, results) => {
@@ -194,8 +199,9 @@ exports.getUserList = (req, res) => {
 		})
 	}
 	const getUserListSize = () => {
+		// 获取每页条数
 		return new Promise((resolve, reject) => {
-			const userListSizeSql = `select * from user limit ${size}`
+			const userListSizeSql = `select * from user limit ${size} offset ${(page - 1) * size}`
 			db.query(userListSizeSql, (err, results) => {
 				if (err) reject(err)
 				else resolve(results)
@@ -206,7 +212,17 @@ exports.getUserList = (req, res) => {
 	Promise.all([getUserListTotal(), getUserListSize()])
 		.then(([total, list]) => {
 			total = total[0].total
-			res.status(200).json({ status: 200, data: { list, total, size } })
+			const filteredList = list.map((item) => {
+				return {
+					id: item.id,
+					username: item.username,
+					headImg: item.head_img,
+					onBoardTime: item.on_board_time,
+					role: item.role,
+					cellPhone: item.cell_phone,
+				}
+			})
+			res.status(200).json({ status: 200, data: { list: filteredList, total, page, size } })
 		})
 		.catch((err) => {
 			console.log(err)

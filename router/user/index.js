@@ -15,7 +15,7 @@ router.get('/add-records', userController.addPunchRecord)
 router.get('/add-user', userController.addUser)
 
 // 获取用户列表
-router.get('/user-list', userController.getUserList)
+router.get('/manage-list', userController.getUserList)
 
 
 module.exports = router
