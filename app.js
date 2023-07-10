@@ -47,9 +47,7 @@ const joi = require('joi')
 app.use((err, req, res, next) => {
 	// 没有 token 或者 token 错误
 	if (err.name === 'UnauthorizedError') {
-		return res
-			.status(401)
-			.json({ status: 401, message: '未收到token或无效、过期' })
+		return res.status(401).json({ status: 401, message: '未收到token或无效、过期' })
 	}
 
 	// joi 表单的用户信息校验失败

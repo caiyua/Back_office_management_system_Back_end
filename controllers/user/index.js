@@ -4,28 +4,29 @@
 const jwt = require('jsonwebtoken')
 const { jwtSecretKey } = require('../../config/jwtSecretKey')
 const db = require('../../config/db')
+const path = require('path')
 
-// 获取用户自身信息-逻辑
+/*
+ * 获取用户自身信息
+ * */
 exports.queryUserinfo = (req, res) => {
 	console.log('user被请求了！')
 	// 不需要向数据库发起请求，因为token里面存着请求用户的信息
 	const token = req.headers.authorization
 	const userinfo = jwt.verify(token.split('Bearer ')[1], jwtSecretKey) // 解析的时候也要把Bearer后面的空格加上
 	const dateOfBirth = new Date(userinfo.date_of_birth)
-	userinfo.date_of_birth = dateOfBirth
-		.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
-		.substring(0, 8)
+	userinfo.date_of_birth = dateOfBirth.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }).substring(0, 8)
 	const onBoardTime = new Date(userinfo.on_board_time)
-	userinfo.on_board_time = onBoardTime
-		.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
-		.substring(0, 8)
+	userinfo.on_board_time = onBoardTime.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }).substring(0, 8)
 	res.status(200).json({
 		status: 200,
 		data: { userinfo },
 	})
 }
 
-// 获取用户自身打卡信息-逻辑
+/*
+ * 获取用户自身打卡信息
+ * */
 exports.queryPunchRecords = (req, res) => {
 	const token = req.headers.authorization
 	const { id } = jwt.verify(token.split('Bearer ')[1], jwtSecretKey)
@@ -50,17 +51,17 @@ exports.queryPunchRecords = (req, res) => {
 	})
 }
 
-// 添加打卡记录-逻辑
+/*
+ * 添加打卡记录
+ * */
 exports.addPunchRecord = (req, res) => {
 	let { id, punch_in, reason } = req.query
 	console.log(id, punch_in)
 	/*
 	 * 判空
 	 * */
-	if (id === undefined)
-		return res.status(400).json({ status: 400, message: '请传入正确参数（id）' })
-	if (punch_in === undefined)
-		return res.status(400).json({ status: 400, message: '请传入正确参数（punch_in）' })
+	if (id === undefined) return res.status(400).json({ status: 400, message: '请传入正确参数（id）' })
+	if (punch_in === undefined) return res.status(400).json({ status: 400, message: '请传入正确参数（punch_in）' })
 
 	/*
 	 * 转换类型
@@ -85,8 +86,7 @@ exports.addPunchRecord = (req, res) => {
 	// 打卡失败
 	if (punch_in === 0) {
 		console.log('打卡失败')
-		const addPunchRecordSql =
-			'insert into punch_records (user_id, punch_in, reason, date) value (?,?,?,?)'
+		const addPunchRecordSql = 'insert into punch_records (user_id, punch_in, reason, date) value (?,?,?,?)'
 		db.query(addPunchRecordSql, [id, punch_in, reason, localTime], (err, results) => {
 			if (err) {
 				return res.status(500).json({ status: 500, message: err.message })
@@ -101,8 +101,7 @@ exports.addPunchRecord = (req, res) => {
 	}
 	// 打卡成功
 	if (punch_in === 1) {
-		const addPunchRecordSql =
-			'insert into punch_records (user_id, punch_in, date) value (?,?, ?)'
+		const addPunchRecordSql = 'insert into punch_records (user_id, punch_in, date) value (?,?, ?)'
 		db.query(addPunchRecordSql, [id, punch_in, localTime], (err, results) => {
 			if (err) {
 				return res.status(500).json({ status: 500, message: err.message })
@@ -115,4 +114,101 @@ exports.addPunchRecord = (req, res) => {
 			})
 		})
 	}
+}
+
+/*
+ * 添加用户
+ * */
+exports.addUser = (req, res) => {
+	const { username, role, onBoardTime } = req.query
+	let { cellPhone } = req.query
+
+	/*
+	 * 判空
+	 * */
+	if (!username || !cellPhone || !role || !onBoardTime) {
+		return res.status(400).json({ status: 400, message: '必要值不能为空！' })
+	}
+
+	/*
+	 * 类型转换
+	 * */
+	if (typeof cellPhone !== 'number') cellPhone = parseInt(cellPhone)
+	if (
+		typeof username !== 'string' ||
+		typeof cellPhone !== 'number' ||
+		typeof role !== 'string' ||
+		typeof onBoardTime !== 'string'
+	) {
+		return res.status(400).json({ status: 400, message: '必要值类型错误！' })
+	}
+
+	/*
+	 * 入库
+	 * */
+	const avatar = path.join(__dirname, '../../public/upload/default-avatar.svg')
+	const insertUserSql = 'insert into user (username, cell_phone, role, on_board_time, head_img ) value (?,?,?,?,?)'
+	db.query(insertUserSql, [username, cellPhone, role, onBoardTime, avatar], (err, results) => {
+		if (err) return res.status(500).json({ status: 500, message: err.message })
+		const queryUserInfo = 'select * from user where username=?'
+		db.query(queryUserInfo, username, (errB, resultsB) => {
+			if (errB) return res.status(500).json({ status: 500, message: err.message })
+			// const {username ,role，onBoardTime}
+			if (resultsB.length < 1) return res.status(500).json({ status: 500, message: '添加失败，请稍后重试' })
+			console.log(resultsB[0])
+			const { username, role, on_board_time, cell_phone, head_img } = resultsB[0]
+			res.status(200).json({
+				status: 200,
+				data: { username, role, on_board_time, cell_phone, head_img },
+			})
+		})
+	})
+}
+
+/*
+ * 获取用户列表
+ * */
+exports.getUserList = (req, res) => {
+	console.log('被访问了');
+	let { page, size } = req.query
+
+	/*
+	 * 判空
+	 * */
+	if (!page || !size) return res.status(400).json({ status: 400, message: '必要参数不能为空！' })
+
+	/*
+	 * 转换类型
+	 * */
+
+	/*
+	 * 获取
+	 * */
+	const getUserListTotal = () => {
+		return new Promise((resolve, reject) => {
+			const userListTotalSql = 'select count(*) as total from user'
+			db.query(userListTotalSql, (err, results) => {
+				if (err) reject(err)
+				else resolve(results)
+			})
+		})
+	}
+	const getUserListSize = () => {
+		return new Promise((resolve, reject) => {
+			const userListSizeSql = `select * from user limit ${size}`
+			db.query(userListSizeSql, (err, results) => {
+				if (err) reject(err)
+				else resolve(results)
+			})
+		})
+	}
+
+	Promise.all([getUserListTotal(), getUserListSize()])
+		.then(([total, list]) => {
+			total = total[0].total
+			res.status(200).json({ status: 200, data: { list, total, size } })
+		})
+		.catch((err) => {
+			console.log(err)
+		})
 }
