@@ -171,15 +171,17 @@ exports.addUser = (req, res) => {
 exports.getUserList = (req, res) => {
 	console.log('被访问了')
 	let { page, size } = req.query
-	console.log(page, size)
+
 	/*
 	 * 判空
 	 * */
+
 	if (!page || !size) return res.status(400).json({ status: 400, message: '必要参数不能为空！' })
 
 	/*
 	 * 转换类型
 	 * */
+
 	if (typeof page !== 'number' || typeof size !== 'number') {
 		page = parseInt(page)
 		size = parseInt(size)
@@ -188,6 +190,7 @@ exports.getUserList = (req, res) => {
 	/*
 	 * 获取
 	 * */
+
 	const getUserListTotal = () => {
 		// 获取总条数
 		return new Promise((resolve, reject) => {
@@ -209,19 +212,42 @@ exports.getUserList = (req, res) => {
 		})
 	}
 
+	/*
+	 * 返回
+	 * */
+
 	Promise.all([getUserListTotal(), getUserListSize()])
-		.then(([total, list]) => {
+		.then(async ([total, list]) => {
 			total = total[0].total
-			const filteredList = list.map((item) => {
+			const filteredList = list.map((item, index) => {
 				return {
+					index: index + 1 + (page - 1) * size,
 					id: item.id,
 					username: item.username,
 					headImg: item.head_img,
 					onBoardTime: item.on_board_time,
-					role: item.role,
+					roles: [],
 					cellPhone: item.cell_phone,
 				}
 			})
+
+			// 创建一个 Promise 数组，用于存储每个查询操作的 Promise
+			const promises = filteredList.map((item) => {
+				return new Promise((resolve, reject) => {
+					db.query('select * from roles where user_id = ?', [item.id], (err, results) => {
+						if (err) {
+							reject(err)
+						} else {
+							item.roles = results.map((role) => role.role)
+							resolve()
+						}
+					})
+				})
+			})
+
+			// 等待所有查询操作完成
+			await Promise.all(promises)
+
 			res.status(200).json({ status: 200, data: { list: filteredList, total, page, size } })
 		})
 		.catch((err) => {
