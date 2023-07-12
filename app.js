@@ -33,12 +33,14 @@ app.use(
 /*
  * 路由
  * */
-const userRouter = require('./router/user')
 const registerRouter = require('./router/register')
 const loginRouter = require('./router/login')
+const userRouter = require('./router/user')
+const uploadRouter = require('./router/upload')
 app.use('/api/v1', registerRouter)
 app.use('/api/v1', loginRouter)
 app.use('/api/v1/user', userRouter)
+app.use('/api/v1/upload', uploadRouter)
 
 /*
  * 错误中间件
