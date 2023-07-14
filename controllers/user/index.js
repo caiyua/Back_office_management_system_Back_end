@@ -147,7 +147,7 @@ exports.addUser = (req, res) => {
 	 * 入库
 	 * */
 	const avatar = path.join(__dirname, '../../public/upload/default-avatar.svg')
-	const insertUserSql = 'insert into user (username, cell_phone, role, on_board_time, head_img ) value (?,?,?,?,?)'
+	const insertUserSql = 'insert into user (username, cell_phone, role, on_board_time, user_avatar ) value (?,?,?,?,?)'
 	db.query(insertUserSql, [username, cellPhone, role, onBoardTime, avatar], (err, results) => {
 		if (err) return res.status(500).json({ status: 500, message: err.message })
 		const queryUserInfo = 'select * from user where username=?'
@@ -169,7 +169,6 @@ exports.addUser = (req, res) => {
  * 获取员工列表
  * */
 exports.getUserList = (req, res) => {
-	console.log('被访问了')
 	let { page, size } = req.query
 
 	/*

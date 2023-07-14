@@ -30,7 +30,7 @@ exports.register = (req, res) => {
 		// 准备入库
 		const encryptedPassword = bcrypt.hashSync(password, 10)
 		const insertUserinfoSql =
-			'insert into user (username, password, head_img) value(?,?,?)'
+			'insert into user (username, password, user_avatar) value(?,?,?)'
 		const headImg = [
 			'https://xd-video-pc-img.oss-cn-beijing.aliyuncs.com/xdclass_pro/default/head_img/10.jpeg',
 			'https://xd-video-pc-img.oss-cn-beijing.aliyuncs.com/xdclass_pro/default/head_img/11.jpeg',

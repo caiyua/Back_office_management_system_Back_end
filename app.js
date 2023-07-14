@@ -37,10 +37,12 @@ const registerRouter = require('./router/register')
 const loginRouter = require('./router/login')
 const userRouter = require('./router/user')
 const uploadRouter = require('./router/upload')
+const employeeRouter = require('./router/employee')
 app.use('/api/v1', registerRouter)
 app.use('/api/v1', loginRouter)
 app.use('/api/v1/user', userRouter)
 app.use('/api/v1/upload', uploadRouter)
+app.use('/api/v1/employee', employeeRouter)
 
 /*
  * 错误中间件
@@ -65,7 +67,7 @@ app.use(handle404Error) // 处理404错误的中间件
 /*
  * 监听端口
  * */
-const PORT = 3000
+const { PORT, SERVER_URL } = require('./config/constant')
 app.listen(PORT, () => {
-	console.log(`http://localhost:${PORT}`)
+	console.log(SERVER_URL + PORT)
 })
