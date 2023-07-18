@@ -133,7 +133,7 @@ exports.addUser = (req, res) => {
 	/*
 	 * 类型转换
 	 * */
-	if (typeof cellPhone !== 'number') cellPhone = parseInt(cellPhone)
+	if (typeof cellPhone !== 'number') cellPhone = Number(cellPhone)
 	if (
 		typeof username !== 'string' ||
 		typeof cellPhone !== 'number' ||
